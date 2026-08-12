@@ -73,6 +73,11 @@ class ScholarClient:
 
         Raises ScholarError if the API keeps returning 429 or cannot be reached,
         so the CLI can report it clearly instead of crashing with a traceback.
+
+        Every other failure is funnelled into ScholarError too. A 5xx is treated
+        as transient and retried like a 429, since the free tier serves them
+        under load; a 4xx is permanent and reported at once rather than spending
+        the retry budget on a request that cannot succeed.
         """
         if self.demo:
             return _demo_response(path, params)
@@ -102,8 +107,24 @@ class ScholarClient:
                 time.sleep(wait)
                 continue
 
-            resp.raise_for_status()
-            return resp.json()
+            if resp.status_code >= 500:
+                log.warning("Server error %d (attempt %d/%d) - retrying",
+                            resp.status_code, attempt + 1, MAX_RETRY)
+                time.sleep(2 ** attempt)
+                continue
+
+            if resp.status_code >= 400:
+                raise ScholarError(
+                    f"Semantic Scholar rejected the request "
+                    f"(HTTP {resp.status_code}). {resp.text[:200]}"
+                )
+
+            try:
+                return resp.json()
+            except ValueError as e:
+                raise ScholarError(
+                    f"Semantic Scholar returned a response that is not JSON ({e})."
+                ) from e
 
         raise ScholarError(
             "Semantic Scholar kept rate-limiting the request. Its free tier "

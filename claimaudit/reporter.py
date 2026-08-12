@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from html import escape as _escape
 from pathlib import Path
 
 from claimaudit.classifier import AuditResult
@@ -37,7 +38,13 @@ def _verdict_badge(verdict: str) -> str:
 
 def render_html(results: list[AuditResult], title: str = "ClaimAudit Report",
                 output_path: Path = None) -> str:
-    """Build a self-contained HTML report."""
+    """Build a self-contained HTML report.
+
+    Titles, claim text and author names come from the Semantic Scholar API, so
+    they are escaped rather than interpolated raw: an abstract containing markup
+    would otherwise be parsed as part of the page.
+    """
+    title = _escape(title)
     cards = []
     for r in results:
         pct  = int(r.survival.score * 10)
@@ -46,13 +53,13 @@ def render_html(results: list[AuditResult], title: str = "ClaimAudit Report",
             auth += " et al."
         card = f"""
 <div class="claim-card">
-  <h3>{r.paper.title}</h3>
-  <p style="font-style:italic">"{r.survival.claim_text}"</p>
+  <h3>{_escape(r.paper.title)}</h3>
+  <p style="font-style:italic">"{_escape(r.survival.claim_text)}"</p>
   {_verdict_badge(r.survival.verdict)}
   <strong style="margin-left:.5rem">{r.survival.score}/10</strong>
   <div class="score-bar"><div class="score-fill" style="width:{pct}%"></div></div>
   <div class="meta">
-    {auth} | {r.paper.year or "n/a"} |
+    {_escape(auth)} | {r.paper.year or "n/a"} |
     Confirms: {r.survival.confirms} |
     Challenges: {r.survival.challenges} |
     Extends: {r.survival.extends} |
