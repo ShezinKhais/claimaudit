@@ -69,7 +69,9 @@ def audit(
     console.print(table)
 
     if html_out:
-        render_html(results, output_path=html_out)
+        # The report states its own subject and whether it came from sample
+        # data, so both have to travel with the results.
+        render_html(results, topic=topic, demo=demo, output_path=html_out)
         console.print(f"HTML -> {html_out}")
     if json_out:
         json_out.write_text(render_json(results))
