@@ -19,7 +19,13 @@ _CONFIRM_PATTERNS = re.compile(
 _CHALLENGE_PATTERNS = re.compile(
     r'\b(contradict(s|ed|ing)?|challeng(e|es|ed|ing)|disput(e|es|ed|ing)|'
     r'refut(e|es|ed|ing)|contrary|inconsistent|fails? to replicate|'
-    r'not (support(s|ed)?|consistent|replicat(e|ed))|question(s|ed|ing)?|'
+    r'not (support(s|ed)?|consistent|replicat(e|ed))|'
+    # "question" only in its verb sense, which a following "the" or "whether"
+    # marks. The bare stem also matched the noun, which is ordinary neutral
+    # prose in a citation ("resolves a longstanding question", "addresses the
+    # question of scale"), and because challenges take precedence over confirms
+    # it turned citations that plainly agreed into challenges.
+    r'question(s|ed|ing)? (the|whether)|call(s|ed)? into question|'
     r'undermin(e|es|ed|ing)|conflict(s|ed|ing)?)\b',
     re.I
 )

@@ -1,13 +1,19 @@
 """Score each claim based on how many citations confirm vs challenge it.
 
-Formula: (confirms*2 + extends*0.5 - challenges*2) / total, scaled to 0-10.
+The score is the balance of confirming against challenging citations, mapped
+onto 0-10 so that an even split sits at 5, plus a bounded bonus for citations
+that extend the work. See compute_survival for the exact treatment of neutral
+and extending citations.
 
-Verdicts:
-  9-10 : Strongly confirmed
-  7-8  : Well-supported
-  5-6  : Mixed / inconclusive
-  3-4  : Contested
-  0-2  : Largely challenged
+Verdict bands (the thresholds live in _VERDICT_THRESHOLDS):
+  8.0-10  : confirmed
+  6.0-8.0 : well-supported
+  4.5-6.0 : mixed
+  3.0-4.5 : contested
+  0-3.0   : challenged
+
+A claim with fewer than min_citations citations scores 5.0 and is reported as
+"insufficient data" rather than being placed in a band.
 """
 
 from __future__ import annotations
@@ -24,7 +30,7 @@ class ClaimSurvival:
     neutral: int
     total: int
     score: float      # 0-10
-    verdict: str      # "confirmed" | "contested" | "challenged" | "insufficient data"
+    verdict: str      # one of _VERDICT_THRESHOLDS' labels, or "insufficient data"
 
 
 _WEIGHTS = {"confirms": 2.0, "extends": 0.5, "challenges": -2.0, "neutral": 0.0}
